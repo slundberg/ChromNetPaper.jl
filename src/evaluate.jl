@@ -21,6 +21,11 @@ function network_enrichment(X::AbstractMatrix, T::AbstractMatrix; numEdges=:num_
     ratioCorrect/(sum(truth)/length(truth))
 end
 
+uniprotHistones = ["Q71DI3", "P0C0S5", "P62805", "P84243"]
+function ishistone(id)
+    return id in uniprotHistones
+end
+
 
 "Load the matrix of pairwise dataset connections supported by BioGRID"
 function truth_matrix(header::AbstractArray)
