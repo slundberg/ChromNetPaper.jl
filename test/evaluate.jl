@@ -1,0 +1,28 @@
+
+# upper
+X = [1 0.1 0.4 0.2; 0.1 1 0.3 0.5; 0.4 0.3 1 0.6; 0.2 0.5 0.6 1]
+@test ChromNetPaper.upper(X) == [0.1, 0.4, 0.3, 0.2, 0.5, 0.6]
+
+# network_enrichment
+T = [1 1 1 0; 1 1 0 1; 1 0 1 0; 0 1 0 1]
+@test ChromNetPaper.network_enrichment(X, T) == (2/3)/0.5
+
+# id2uniprot
+@test ChromNetPaper.id2uniprot("ENCSR177HDZ") == "P01100"
+@test ChromNetPaper.id2uniprot("ENCSR664POU") == "Q04206"
+@test ChromNetPaper.id2uniprot("ENCSR459FTB") == "P17480"
+
+# id2celltype
+@test ChromNetPaper.id2celltype("ENCSR177HDZ") == "HepG2"
+
+# id2truth
+@test ChromNetPaper.id2truth("ENCSR177HDZ", "ENCSR664POU")
+@test !ChromNetPaper.id2truth("ENCSR177HDZ", "ENCSR459FTB")
+
+# truth_matrix
+ans = [
+    true  true  false;
+    true  true  false;
+    false false true;
+]
+@test all(ChromNetPaper.truth_matrix(["ENCSR177HDZ", "ENCSR664POU", "ENCSR459FTB"]) .== ans)

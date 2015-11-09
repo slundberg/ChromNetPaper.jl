@@ -1,5 +1,5 @@
 using ChromNetPaper
 using Base.Test
 
-# write your own tests here
-@test 1 == 1
+include("evaluate.jl")
+include("groupgm.jl")
