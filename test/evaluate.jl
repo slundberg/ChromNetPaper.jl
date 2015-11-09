@@ -28,5 +28,5 @@ ans = [
 @test all(ChromNetPaper.truth_matrix(["ENCSR177HDZ", "ENCSR664POU", "ENCSR459FTB"]) .== ans)
 
 # ishistone
-@test ChromNetPaper.ishistone("Q71DI3")
-@test !ChromNetPaper.ishistone("P01100")
+@test ChromNetPaper.ishistone("ENCSR449AYM")
+@test !ChromNetPaper.ishistone("ENCSR177HDZ")
