@@ -1,24 +1,36 @@
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
-function upper(X::AbstractMatrix)
-    x = Float64[]
+function upper{T}(X::Array{T,2})
+    x = T[]
     for i in 1:size(X)[2], j in 1:i-1
         push!(x, X[j,i])
     end
     x
 end
 
-"This reports the enrichment (over random) of true edges from the given score matrix."
-function network_enrichment(X::AbstractMatrix, T::AbstractMatrix; numEdges=:num_true)
+"""
+This reports the enrichment (over random) of true edges from the given score matrix.
+
+X - The matrix of scores (higher is stronger)
+T - A matrix of truth pairings.
+M - An optional boolean matrix masking which entries should be evaluated.
+"""
+function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; numEdges=:num_true)
     @assert size(X) == size(T)
-    scores = upper(X)
-    truth = round(Int, upper(T))
+    @assert size(X) == size(M)
+
+    mask = upper(M)
+    scores = upper(X)[mask]
+    truth = upper(T)[mask]
     if numEdges == :num_true
         numEdges = sum(truth)
     end
 
     ratioCorrect = sum(truth[sortperm(-scores)][1:numEdges])/numEdges
     ratioCorrect/(sum(truth)/length(truth))
+end
+function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; numEdges=:num_true)
+    network_enrichment(X, T, ones(Bool, size(X)...); numEdges=numEdges)
 end
 
 uniprotHistones = ["Q71DI3", "P0C0S5", "P62805", "P84243"]
@@ -39,11 +51,11 @@ function truth_matrix(header::AbstractArray)
 end
 
 id2truthDict = Dict()
-"Get the uniprot id of a given experiment id."
+"Check if two datasets are connected in BioGRID."
 function id2truth(id1, id2)
     global id2truthDict
 
-    if id1 == id2
+    if id2uniprot(id1) == id2uniprot(id2)
         return true
     end
 

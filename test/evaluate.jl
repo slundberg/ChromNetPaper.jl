@@ -4,8 +4,10 @@ X = [1 0.1 0.4 0.2; 0.1 1 0.3 0.5; 0.4 0.3 1 0.6; 0.2 0.5 0.6 1]
 @test ChromNetPaper.upper(X) == [0.1, 0.4, 0.3, 0.2, 0.5, 0.6]
 
 # network_enrichment
-T = [1 1 1 0; 1 1 0 1; 1 0 1 0; 0 1 0 1]
+T = round(Bool, [1 1 1 0; 1 1 0 1; 1 0 1 0; 0 1 0 1])
 @test ChromNetPaper.network_enrichment(X, T) == (2/3)/0.5
+M = round(Bool, [1 1 1 0; 1 1 1 0; 1 1 1 0; 0 0 0 0])
+@test ChromNetPaper.network_enrichment(X, T, M) == (1/2)/(2/3)
 
 # id2uniprot
 @test ChromNetPaper.id2uniprot("ENCSR177HDZ") == "P01100"
