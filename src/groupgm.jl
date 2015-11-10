@@ -8,7 +8,7 @@ only connect individual datasets. The group filter determines which groups shoul
 be considered for the projection (this may exclude large groups), and then the
 edge merge function determines how to merge two edge values.
 """
-function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::AbstractArray, groupFilter::Function, edgeMerge::Function=max)
+function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::AbstractArray, groupFilter::Function, edgeMerge::Function=(x,y)->abs(x) > abs(y) ? x : y)
 
     # create a map from header ids to indexes
     indexMap = Dict{ASCIIString,Int64}()
@@ -18,8 +18,9 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
 
     # fill in our projected matrix
     X = NaN*zeros(length(header),length(header))
-    indexGroups = collect(map(g->collect(map(x->indexMap[x], split(g[2]))), filter(groupFilter, groups)))
+    indexGroups = collect(map(g->collect(map(x->indexMap[x], split(g[2]))), groups))
     for i in 1:length(indexGroups)
+        if !groupFilter(groups[i]) continue end
 
         # fill in diagonal
         if length(indexGroups[i]) == 1
@@ -28,7 +29,7 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
         end
 
         for j in i:length(indexGroups)
-            if issubset(indexGroups[i], indexGroups[j]) || issubset(indexGroups[j], indexGroups[i])
+            if !groupFilter(groups[j]) || issubset(indexGroups[i], indexGroups[j]) || issubset(indexGroups[j], indexGroups[i])
                 continue
             end
 
