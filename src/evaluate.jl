@@ -1,4 +1,6 @@
 
+export network_enrichment, id2uniprot, id2truth
+
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
     x = T[]

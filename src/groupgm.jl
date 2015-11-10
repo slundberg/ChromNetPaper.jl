@@ -1,4 +1,5 @@
 
+export project_groupgm
 
 """
 This projects a group graphical model down to a network among individual variables.
