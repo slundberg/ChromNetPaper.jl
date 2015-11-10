@@ -1,5 +1,5 @@
 
-export network_enrichment, id2uniprot, id2truth
+export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
