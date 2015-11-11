@@ -29,7 +29,7 @@ function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2
     end
 
     ratioCorrect = sum(truth[sortperm(-scores)][1:numEdges])/numEdges
-    ratioCorrect/(sum(truth)/length(truth))
+    ratioCorrect / (sum(truth)/length(truth))
 end
 function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; numEdges=:num_true)
     network_enrichment(X, T, ones(Bool, size(X)...); numEdges=numEdges)
@@ -45,7 +45,6 @@ end
 function truth_matrix(header::AbstractArray)
     P = length(header)
     T = zeros(Bool, P,P)
-    uids = map(id2uniprot, header)
     for i in 1:P, j in i:P
         T[j,i] = T[i,j] = id2truth(header[j], header[i])
     end
@@ -57,7 +56,7 @@ id2truthDict = Dict()
 function id2truth(id1, id2)
     global id2truthDict
 
-    if id2uniprot(id1) == id2uniprot(id2)
+    if (id2uniprot(id1) == id2uniprot(id2)) && (id2uniprot(id1) != "")
         return true
     end
 
@@ -74,7 +73,6 @@ function id2truth(id1, id2)
 
     get(id2truthDict, (id2uniprot(id1), id2uniprot(id2)), false)
 end
-
 
 id2uniprotDict = Dict()
 "Get the uniprot id of a given experiment id."

@@ -4,7 +4,7 @@ export project_groupgm
 """
 This projects a group graphical model down to a network among individual variables.
 
-Projection is nessecary in order to compare with standard modeling methods that
+Projection is necessary in order to compare with standard modeling methods that
 only connect individual datasets. The group filter determines which groups should
 be considered for the projection (this may exclude large groups), and then the
 edge merge function determines how to merge two edge values.
@@ -19,17 +19,17 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
 
     # fill in our projected matrix
     X = NaN*zeros(length(header),length(header))
-    indexGroups = collect(map(g->collect(map(x->indexMap[x], split(g[2]))), groups))
+    indexGroups = [[indexMap[x] for x in split(g[2])] for g in groups]
     for i in 1:length(indexGroups)
         if !groupFilter(groups[i]) continue end
 
         # fill in diagonal
         if length(indexGroups[i]) == 1
-            ind = indexGroups[i]
+            ind = indexGroups[i][1]
             X[ind,ind] = G[i,i]
         end
 
-        for j in i:length(indexGroups)
+        for j in i+1:length(indexGroups)
             if !groupFilter(groups[j]) || issubset(indexGroups[i], indexGroups[j]) || issubset(indexGroups[j], indexGroups[i])
                 continue
             end
