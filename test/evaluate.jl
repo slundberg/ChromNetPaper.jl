@@ -32,3 +32,6 @@ ans = [
 # ishistone
 @test ChromNetPaper.ishistone("ENCSR449AYM")
 @test !ChromNetPaper.ishistone("ENCSR177HDZ")
+
+# area_under_pr
+ChromNetPaper.area_under_pr(X, T, M) # just amke sure it runs for now
