@@ -1,6 +1,6 @@
 using MLBase
 
-export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix, mask_matrix
+export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix, mask_matrix, apply_to_celltypes
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
@@ -50,6 +50,17 @@ function truth_matrix(header::AbstractArray)
         T[j,i] = T[i,j] = id2truth(header[j], header[i])
     end
     T
+end
+
+"Apply the passed function to each cell type sub-block of the given matrix."
+function apply_to_celltypes(f, C, ids)
+    out = zeros(size(C)...)
+    cellTypes = unique([ChromNetPaper.id2celltype(id) for id in ids])
+    for cellType in cellTypes
+        inds = find([ChromNetPaper.id2celltype(id) == cellType for id in ids])
+        out[inds,inds] = f(C[inds,inds], ids[inds])
+    end
+    out
 end
 
 id2truthDict = Dict()
