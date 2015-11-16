@@ -21,3 +21,6 @@ ans = [
     0.6 0.8 0.6 1.0
 ]
 @test all((ChromNetPaper.project_groupgm(G, header, groups, x->x[1] < 0.1) .- ans) .< 1e-8)
+
+# run with default group filter
+ChromNetPaper.project_groupgm(G, header, groups)

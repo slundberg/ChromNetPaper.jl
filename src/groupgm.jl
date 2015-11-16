@@ -9,7 +9,7 @@ only connect individual datasets. The group filter determines which groups shoul
 be considered for the projection (this may exclude large groups), and then the
 edge merge function determines how to merge two edge values.
 """
-function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::AbstractArray, groupFilter::Function=nothing, edgeMerge::Function=(x,y)->abs(x) > abs(y) ? x : y)
+function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::AbstractArray, groupFilter=nothing, edgeMerge::Function=(x,y)->abs(x) > abs(y) ? x : y)
 
     # by default only allow groups targeting the same factor
     function same_factor_filter(x)
