@@ -1,6 +1,6 @@
 using MLBase
 
-export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix
+export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix, mask_matrix
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
@@ -112,41 +112,77 @@ function id2celltype(id)
     get(id2cellTypeDict, id, "")
 end
 
-function area_under_pr(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; resolution=4000)
-    @assert size(X) == size(T)
-    @assert size(X) == size(M)
+function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=false)
+    P = length(ids)
+    M = zeros(Bool, P, P)
+    for i in 1:P, j in i:P
 
-    mask = upper(M)
-    scores = upper(X)[mask]
-    truth = upper(T)[mask]
+        # exclude connections involving histones
+        exclude = ishistone(ids[i]) || ishistone(ids[j])
 
-    area_under_pr(truth, scores; resolution=resolution)
-end
-
-function area_under_pr(truth::AbstractVector, predictor::AbstractVector; resolution=4000)
-    rocData = MLBase.roc(round(Int64, truth), float(invperm(sortperm(predictor))), resolution)
-    vals = collect(map(x->(recall(x), -precision(x)), rocData))
-    sort!(vals)
-    xvals = map(x->x[1], vals)
-    yvals = map(x->-x[2], vals)
-    # println(xvals)
-    # println(yvals)
-    area_under_curve([0.0; xvals], [yvals[1]; yvals]) # make sure we extend all the way to zero
-end
-function area_under_curve(x, y) # must be sorted by increasing x
-    area = 0.0
-    lastVal = NaN
-    for i in 2:length(x)
-        v = (y[i-1]+y[i])/2 * (x[i]-x[i-1])
-        if !isnan(v)
-            area += v
-            lastVal = v
-        elseif !isnan(lastVal)
-            area += lastVal
+        if excludeCellType != nothing
+            exclude = exclude || id2celltype(ids[i]) == excludeCellType || id2celltype(ids[j]) == excludeCellType
         end
+
+        # exclude same uniprot target connections
+        exclude = exclude || (id2uniprot(ids[i]) == id2uniprot(ids[j]))
+
+        # restrict by cellType
+        if maskType == "within_all" || maskType == "within_all_separate"
+            exclude = exclude || id2celltype(ids[i]) != id2celltype(ids[j])
+        elseif maskType == "between_all"
+            exclude = exclude || id2celltype(ids[i]) == id2celltype(ids[j])
+        elseif maskType == "all"
+            # no filter
+        else
+            if includeCrossEdges
+                exclude = exclude || (id2celltype(ids[i]) != cellType && id2celltype(ids[j]) != cellType)
+            else
+                exclude = exclude || id2celltype(ids[i]) != cellType
+                exclude = exclude || id2celltype(ids[j]) != cellType
+            end
+        end
+
+        M[i,j] = M[j,i] = !exclude
     end
-    area
+    M
 end
-function area_under_pr(truth::AbstractMatrix, predictor::AbstractMatrix)
-    area_under_pr(abs(upper(truth)) .> 0.01, abs(upper(predictor)))
-end
+
+# function area_under_pr(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; resolution=4000)
+#     @assert size(X) == size(T)
+#     @assert size(X) == size(M)
+#
+#     mask = upper(M)
+#     scores = upper(X)[mask]
+#     truth = upper(T)[mask]
+#
+#     area_under_pr(truth, scores; resolution=resolution)
+# end
+#
+# function area_under_pr(truth::AbstractVector, predictor::AbstractVector; resolution=4000)
+#     rocData = MLBase.roc(round(Int64, truth), float(invperm(sortperm(predictor))), resolution)
+#     vals = collect(map(x->(recall(x), -precision(x)), rocData))
+#     sort!(vals)
+#     xvals = map(x->x[1], vals)
+#     yvals = map(x->-x[2], vals)
+#     # println(xvals)
+#     # println(yvals)
+#     area_under_curve([0.0; xvals], [yvals[1]; yvals]) # make sure we extend all the way to zero
+# end
+# function area_under_curve(x, y) # must be sorted by increasing x
+#     area = 0.0
+#     lastVal = NaN
+#     for i in 2:length(x)
+#         v = (y[i-1]+y[i])/2 * (x[i]-x[i-1])
+#         if !isnan(v)
+#             area += v
+#             lastVal = v
+#         elseif !isnan(lastVal)
+#             area += lastVal
+#         end
+#     end
+#     area
+# end
+# function area_under_pr(truth::AbstractMatrix, predictor::AbstractMatrix)
+#     area_under_pr(abs(upper(truth)) .> 0.01, abs(upper(predictor)))
+# end

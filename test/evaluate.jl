@@ -34,4 +34,4 @@ ans = [
 @test !ChromNetPaper.ishistone("ENCSR177HDZ")
 
 # area_under_pr
-ChromNetPaper.area_under_pr(X, T, M) # just amke sure it runs for now
+#ChromNetPaper.area_under_pr(X, T, M) # just make sure it runs for now
