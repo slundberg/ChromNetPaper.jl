@@ -1,7 +1,7 @@
 using MLBase
 using JSON
 
-export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix, mask_matrix, apply_to_celltypes
+export network_enrichment, id2uniprot, id2truth, id2celltype, id2treatments, id2target, ishistone, truth_matrix, mask_matrix, apply_to_celltypes
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
