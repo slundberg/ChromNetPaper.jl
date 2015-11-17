@@ -17,6 +17,12 @@ M = round(Bool, [1 1 1 0; 1 1 1 0; 1 1 1 0; 0 0 0 0])
 # id2celltype
 @test ChromNetPaper.id2celltype("ENCSR177HDZ") == "HepG2"
 
+# id2target
+@test ChromNetPaper.id2target("ENCSR177HDZ") == "FOS"
+
+# id2treatments
+@test ChromNetPaper.id2treatments("ENCSR177HDZ") == "None"
+
 # id2truth
 @test ChromNetPaper.id2truth("ENCSR177HDZ", "ENCSR664POU")
 @test !ChromNetPaper.id2truth("ENCSR177HDZ", "ENCSR459FTB")

@@ -1,4 +1,5 @@
 using MLBase
+using JSON
 
 export network_enrichment, id2uniprot, id2truth, id2celltype, ishistone, truth_matrix, mask_matrix, apply_to_celltypes
 
@@ -86,41 +87,38 @@ function id2truth(id1, id2)
     get(id2truthDict, (id2uniprot(id1), id2uniprot(id2)), false)
 end
 
-id2uniprotDict = Dict()
+metadataDict = open(f->JSON.parse(readall(f)), joinpath(globalDataDir, "metadata.json"))
+
 "Get the uniprot id of a given experiment id."
 function id2uniprot(id)
-    global id2uniprotDict
-
-    # lazy load the data
-    if length(id2uniprotDict) == 0
-        f = open(joinpath(globalDataDir, "id2uniprot.txt"))
-        for line in eachline(f)
-            parts = split(strip(line), '\t')
-            id2uniprotDict[parts[1]] = parts[2]
-        end
-        close(f)
+    if haskey(metadataDict, id)
+        return metadataDict[id]["targetUniProt"]
     end
-
-    get(id2uniprotDict, id, "")
+    ""
 end
 
-
-id2cellTypeDict = Dict()
 "Get the cell type of a given experiment id."
 function id2celltype(id)
-    global id2cellTypeDict
-
-    # lazy load the data
-    if length(id2cellTypeDict) == 0
-        f = open(joinpath(globalDataDir, "id2celltype.txt"))
-        for line in eachline(f)
-            parts = split(strip(line), '\t')
-            id2cellTypeDict[parts[1]] = parts[2]
-        end
-        close(f)
+    if haskey(metadataDict, id)
+        return metadataDict[id]["cellType"]
     end
+    ""
+end
 
-    get(id2cellTypeDict, id, "")
+"Get the target name of a given experiment id."
+function id2target(id)
+    if haskey(metadataDict, id)
+        return metadataDict[id]["name"]
+    end
+    ""
+end
+
+"Get the treatments of a given experiment id."
+function id2treatments(id)
+    if haskey(metadataDict, id)
+        return metadataDict[id]["treatments"]
+    end
+    ""
 end
 
 function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=false)
