@@ -39,5 +39,15 @@ ans = [
 @test ishistone("ENCSR449AYM")
 @test !ishistone("ENCSR177HDZ")
 
-# area_under_pr
-#ChromNetPaper.area_under_pr(X, T, M) # just make sure it runs for now
+# enrichment_rank
+mask = ChromNetPaper.upper(M)
+scores = ChromNetPaper.upper(X)[mask]
+truth = ChromNetPaper.upper(T)[mask]
+x,y = enrichment_rank(truth, scores)
+@test maximum(abs(x .- [1,2,3])) < 1e-8
+@test maximum(abs(y .- [(1/1)/(2/3), (1/2)/(2/3), (2/3)/(2/3)])) < 1e-8
+
+# network_enrichment_density
+x2,y2 = network_enrichment_density(X, T, M)
+@test maximum(abs(y2 .- y)) < 1e-8
+@test abs(x2[end] - 1.0) < 1e-8

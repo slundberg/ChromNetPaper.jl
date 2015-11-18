@@ -1,7 +1,19 @@
 using MLBase
 using JSON
 
-export network_enrichment, id2uniprot, id2truth, id2celltype, id2treatments, id2target, ishistone, truth_matrix, mask_matrix, apply_to_celltypes
+export
+    network_enrichment,
+    id2uniprot,
+    id2truth,
+    id2celltype,
+    id2treatments,
+    id2target,
+    ishistone,
+    truth_matrix,
+    mask_matrix,
+    apply_to_celltypes,
+    network_enrichment_density,
+    enrichment_rank
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
@@ -35,6 +47,54 @@ function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2
 end
 function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; numEdges=:num_true)
     network_enrichment(X, T, ones(Bool, size(X)...); numEdges=numEdges)
+end
+
+# fill in any blank spots with nearby values
+function fill_nans(vals)
+    newVals = copy(vals)
+    for i in 2:length(vals)
+        if isnan(vals[i])
+            newVals[i] = newVals[i-1]
+        end
+    end
+    for i in length(vals)-1:-1:1
+        if isnan(vals[i])
+            newVals[i] = newVals[i+1]
+        end
+    end
+    newVals
+end
+
+# compute the rank enrichment curve
+function enrichment_rank(truth, pred)
+    enrichment_rank(truth[sortperm(pred, rev=true)])
+end
+function enrichment_rank(rankedTruth; weights=nothing)
+    weights = weights == nothing ? ones(length(rankedTruth)) : weights
+    x = zeros(Float64, length(rankedTruth))
+    y = zeros(Float64, length(rankedTruth))
+    randRate = dot(rankedTruth,weights) / sum(weights)
+    totalMatchedWeight = 0
+    totalSeenWeight = 0
+
+    for i in 1:length(rankedTruth)
+        totalMatchedWeight += rankedTruth[i] * weights[i]
+        totalSeenWeight += weights[i]
+        x[i] = totalSeenWeight
+        y[i] = (totalMatchedWeight/totalSeenWeight) / randRate
+    end
+    x,fill_nans(y)
+end
+
+function network_enrichment_density(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2})
+    @assert size(X) == size(T)
+    @assert size(X) == size(M)
+
+    mask = upper(M)
+    scores = upper(X)[mask]
+    truth = upper(T)[mask]
+    x,y = enrichment_rank(truth, scores)
+    x ./ x[end], y
 end
 
 uniprotHistones = ["Q71DI3", "P0C0S5", "P62805", "P84243"]
