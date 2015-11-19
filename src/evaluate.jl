@@ -236,11 +236,11 @@ function unique_ppi_pairs(X::AbstractMatrix, ids, T::Array{Bool,2}, M::Array{Boo
 
     if numEdges != nothing
         inds = sortperm(-scores)[1:numEdges]
-        println("$numEdges edges chosen.")
+        #println("$numEdges edges chosen.")
         trueInds = inds[truth[inds]]
         return unique(pairs[trueInds])
     elseif scoreThreshold != nothing
-        println(sum(scores .> scoreThreshold), " edges above threshold.")
+        #println(sum(scores .> scoreThreshold), " edges above threshold.")
         trueInds = find(truth .* (scores .> scoreThreshold))
         return unique(pairs[trueInds])
     else
