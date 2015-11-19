@@ -39,6 +39,14 @@ ans = [
 @test ishistone("ENCSR449AYM")
 @test !ishistone("ENCSR177HDZ")
 
+# mask_matrix
+ans = [
+    false false false;
+    false false true;
+    false true  false;
+]
+@test all(mask_matrix("within_all", ["ENCSR177HDZ", "ENCSR664POU", "ENCSR459FTB"]) .== ans)
+
 # enrichment_rank
 mask = ChromNetPaper.upper(M)
 scores = ChromNetPaper.upper(X)[mask]
