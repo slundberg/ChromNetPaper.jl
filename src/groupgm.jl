@@ -1,5 +1,5 @@
 
-export project_groupgm
+export project_groupgm, edge_groupgm
 
 """
 This projects a group graphical model down to a network among individual variables.
@@ -56,4 +56,10 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
     end
 
     X
+end
+
+function edge_groupgm(C, ids, invFunc=inv; checkGroup=nothing)
+    groups = build_groups(C, ids)
+    G,headerG = build_groupgm(invFunc(C), ids, groups)
+    project_groupgm(G, ids, groups)
 end

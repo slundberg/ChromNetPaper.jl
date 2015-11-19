@@ -11,6 +11,7 @@ export
     ishistone,
     truth_matrix,
     mask_matrix,
+    unique_ppi_pairs,
     apply_to_celltypes,
     network_enrichment_density,
     enrichment_rank
@@ -114,9 +115,11 @@ function truth_matrix(header::AbstractArray)
 end
 
 "Apply the passed function to each cell type sub-block of the given matrix."
-function apply_to_celltypes(f, C, ids)
+function apply_to_celltypes(f, C, ids; cellTypes=nothing)
     out = zeros(size(C)...)
-    cellTypes = unique([ChromNetPaper.id2celltype(id) for id in ids])
+    if cellTypes == nothing
+        cellTypes = unique([ChromNetPaper.id2celltype(id) for id in ids])
+    end
     for cellType in cellTypes
         inds = find([ChromNetPaper.id2celltype(id) == cellType for id in ids])
         out[inds,inds] = f(C[inds,inds], ids[inds])
@@ -205,16 +208,44 @@ function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=f
             # no filter
         else
             if includeCrossEdges
-                exclude = exclude || (id2celltype(ids[i]) != cellType && id2celltype(ids[j]) != cellType)
+                exclude = exclude || (id2celltype(ids[i]) != maskType && id2celltype(ids[j]) != maskType)
             else
-                exclude = exclude || id2celltype(ids[i]) != cellType
-                exclude = exclude || id2celltype(ids[j]) != cellType
+                exclude = exclude || id2celltype(ids[i]) != maskType
+                exclude = exclude || id2celltype(ids[j]) != maskType
             end
         end
 
         M[i,j] = M[j,i] = !exclude
     end
     M
+end
+
+function unique_ppi_pairs(X::AbstractMatrix, ids, T::Array{Bool,2}, M::Array{Bool,2}; numEdges=nothing, scoreThreshold=nothing)
+    @assert size(X)[1] == length(ids)
+    @assert size(X) == size(M)
+
+    pairsMatrix = Array(Any, size(X)...)
+    for i in 1:size(X)[1], j in i+1:size(X)[2]
+        pairsMatrix[j,i] = pairsMatrix[i,j] = sort([id2uniprot(ids[j]), id2uniprot(ids[i])])
+    end
+
+    mask = ChromNetPaper.upper(M)
+    truth = ChromNetPaper.upper(T)[mask]
+    scores = ChromNetPaper.upper(X)[mask]
+    pairs = ChromNetPaper.upper(pairsMatrix)[mask]
+
+    if numEdges != nothing
+        inds = sortperm(-scores)[1:numEdges]
+        println("$numEdges edges chosen.")
+        trueInds = inds[truth[inds]]
+        return unique(pairs[trueInds])
+    elseif scoreThreshold != nothing
+        println(sum(scores .> scoreThreshold), " edges above threshold.")
+        trueInds = find(truth .* (scores .> scoreThreshold))
+        return unique(pairs[trueInds])
+    else
+        error("Either numEdges or scoreThreshold must be set!")
+    end
 end
 
 # function area_under_pr(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; resolution=4000)
