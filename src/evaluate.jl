@@ -87,7 +87,7 @@ function enrichment_rank(rankedTruth; weights=nothing)
     x,fill_nans(y)
 end
 
-function network_enrichment_density(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2})
+function network_enrichment_rank(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2})
     @assert size(X) == size(T)
     @assert size(X) == size(M)
 
@@ -95,6 +95,11 @@ function network_enrichment_density(X::AbstractMatrix, T::Array{Bool,2}, M::Arra
     scores = upper(X)[mask]
     truth = upper(T)[mask]
     x,y = enrichment_rank(truth, scores)
+    x, y
+end
+
+function network_enrichment_density(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2})
+    x,y = network_enrichment_rank(X, T, M)
     x ./ x[end], y
 end
 
@@ -199,14 +204,13 @@ function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=f
         # exclude same uniprot target connections
         exclude = exclude || (id2uniprot(ids[i]) == id2uniprot(ids[j]))
 
-        # restrict by cellType
         if maskType == "within_all" || maskType == "within_all_separate"
             exclude = exclude || id2celltype(ids[i]) != id2celltype(ids[j])
         elseif maskType == "between_all"
             exclude = exclude || id2celltype(ids[i]) == id2celltype(ids[j])
         elseif maskType == "all"
             # no filter
-        else
+        else # restrict by cellType
             if includeCrossEdges
                 exclude = exclude || (id2celltype(ids[i]) != maskType && id2celltype(ids[j]) != maskType)
             else
