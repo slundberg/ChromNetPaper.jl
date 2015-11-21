@@ -13,6 +13,7 @@ export
     mask_matrix,
     unique_ppi_pairs,
     apply_to_celltypes,
+    network_enrichment_rank,
     network_enrichment_density,
     enrichment_rank
 

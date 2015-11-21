@@ -59,3 +59,8 @@ x,y = enrichment_rank(truth, scores)
 x2,y2 = network_enrichment_density(X, T, M)
 @test maximum(abs(y2 .- y)) < 1e-8
 @test abs(x2[end] - 1.0) < 1e-8
+
+# network_enrichment_rank
+x2,y2 = network_enrichment_rank(X, T, M)
+@test maximum(abs(y2 .- y)) < 1e-8
+@test abs(x2[end] - length(x2)) < 1e-8
