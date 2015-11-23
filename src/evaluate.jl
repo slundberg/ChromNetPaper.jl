@@ -68,8 +68,10 @@ function fill_nans(vals)
 end
 
 # compute the rank enrichment curve
-function enrichment_rank(truth, pred)
-    enrichment_rank(truth[sortperm(pred, rev=true)])
+function enrichment_rank(truth, pred; weights=nothing)
+    weights = weights == nothing ? ones(length(truth)) : weights
+    p = sortperm(pred, rev=true)
+    enrichment_rank(truth[p], weights=weights[p])
 end
 function enrichment_rank(rankedTruth; weights=nothing)
     weights = weights == nothing ? ones(length(rankedTruth)) : weights
@@ -88,14 +90,17 @@ function enrichment_rank(rankedTruth; weights=nothing)
     x,fill_nans(y)
 end
 
-function network_enrichment_rank(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2})
+function network_enrichment_rank(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; W=nothing)
+    W = W == nothing ? ones(size(X)...) : W
     @assert size(X) == size(T)
     @assert size(X) == size(M)
+    @assert size(X) == size(W)
 
     mask = upper(M)
     scores = upper(X)[mask]
     truth = upper(T)[mask]
-    x,y = enrichment_rank(truth, scores)
+    weights = upper(W)[mask]
+    x,y = enrichment_rank(truth, scores; weights=weights)
     x, y
 end
 
@@ -223,6 +228,22 @@ function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=f
         M[i,j] = M[j,i] = !exclude
     end
     M
+end
+
+function bin_values_avg(x, y, nbins)
+    @assert length(x) == length(y)
+    counts = zeros(nbins)
+    sums = zeros(nbins)
+    xmax = maximum(x)
+
+    # bin the data
+    for i in 1:length(x)
+        ind = min(round(Int, floor(x[i]/xmax * nbins))+1, nbins)
+        counts[ind] += 1
+        sums[ind] += y[i]
+    end
+
+    ChromNetPaper.fill_nans(sums ./ counts)
 end
 
 function unique_ppi_pairs(X::AbstractMatrix, ids, T::Array{Bool,2}, M::Array{Bool,2}; numEdges=nothing, scoreThreshold=nothing)
