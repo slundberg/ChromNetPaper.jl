@@ -15,7 +15,8 @@ export
     apply_to_celltypes,
     network_enrichment_rank,
     network_enrichment_density,
-    enrichment_rank
+    enrichment_rank,
+    bin_values_avg
 
 "Simple helper method to get the upper off-diagonal entries of a matrix."
 function upper{T}(X::Array{T,2})
