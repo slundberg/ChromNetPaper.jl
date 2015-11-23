@@ -91,17 +91,17 @@ function enrichment_rank(rankedTruth; weights=nothing)
     x,fill_nans(y)
 end
 
-function network_enrichment_rank(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; W=nothing)
-    W = W == nothing ? ones(size(X)...) : W
+function network_enrichment_rank(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; weights=nothing)
+    weights = weights == nothing ? ones(size(X)...) : weights
     @assert size(X) == size(T)
     @assert size(X) == size(M)
-    @assert size(X) == size(W)
+    @assert size(X) == size(weights)
 
     mask = upper(M)
     scores = upper(X)[mask]
     truth = upper(T)[mask]
-    weights = upper(W)[mask]
-    x,y = enrichment_rank(truth, scores; weights=weights)
+    weightsMasked = upper(weights)[mask]
+    x,y = enrichment_rank(truth, scores; weights=weightsMasked)
     x, y
 end
 
