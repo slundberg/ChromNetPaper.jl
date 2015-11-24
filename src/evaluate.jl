@@ -34,22 +34,36 @@ X - The matrix of scores (higher is stronger)
 T - A matrix of truth pairings.
 M - An optional boolean matrix masking which entries should be evaluated.
 """
-function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; numEdges=:num_true)
+function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}, M::Array{Bool,2}; weights=nothing, numEdges=:num_true)
+    weights = weights == nothing ? ones(size(X)...) : weights
     @assert size(X) == size(T)
     @assert size(X) == size(M)
+    @assert size(X) == size(weights)
 
     mask = upper(M)
     scores = upper(X)[mask]
     truth = upper(T)[mask]
+    weightsMasked = upper(weights)[mask]
     if numEdges == :num_true
-        numEdges = sum(truth)
+        numEdges = sum(weightsMasked[truth])
     end
 
-    ratioCorrect = sum(truth[sortperm(-scores)][1:numEdges])/numEdges
-    ratioCorrect / (sum(truth)/length(truth))
+    totalCorrect = 0.0
+    totalWeight = 0.0
+    sortedInds = sortperm(-scores)
+    for ind in sortedInds
+        totalWeight += weightsMasked[ind]
+        if truth[ind]
+            totalCorrect += weightsMasked[ind]
+        end
+        if totalWeight >= numEdges
+            break
+        end
+    end
+    (totalCorrect/totalWeight) / (sum(weightsMasked[truth])/sum(weightsMasked))
 end
-function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; numEdges=:num_true)
-    network_enrichment(X, T, ones(Bool, size(X)...); numEdges=numEdges)
+function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; weights=nothing, numEdges=:num_true)
+    network_enrichment(X, T, ones(Bool, size(X)...); weights=weights, numEdges=numEdges)
 end
 
 # fill in any blank spots with nearby values
@@ -194,6 +208,18 @@ function id2treatments(id)
         return metadataDict[id]["treatments"]
     end
     ""
+end
+
+# from: http://stackoverflow.com/questions/27677399/julia-how-to-copy-data-to-another-processor-in-julia
+function sendto(p::Int; args...)
+    for (nm, val) in args
+        @spawnat(p, eval(Main, Expr(:(=), nm, val)))
+    end
+end
+function sendto(ps::Vector{Int}; args...)
+    for p in ps
+        sendto(p; args...)
+    end
 end
 
 function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=false)
