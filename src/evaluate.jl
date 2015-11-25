@@ -5,6 +5,7 @@ export
     network_enrichment,
     id2uniprot,
     id2truth,
+    uniprot2truth,
     id2celltype,
     id2treatments,
     id2target,
