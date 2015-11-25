@@ -62,5 +62,5 @@ end
 function edge_groupgm(C, ids, invFunc=inv; checkGroup=nothing)
     groups = build_groups(C, ids)
     G,headerG = build_groupgm(invFunc(C), ids, groups)
-    project_groupgm(G, ids, groups)
+    project_groupgm(G, ids, groups, checkGroup)
 end
