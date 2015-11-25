@@ -66,6 +66,84 @@ function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; weights=nothing
     network_enrichment(X, T, ones(Bool, size(X)...); weights=weights, numEdges=numEdges)
 end
 
+function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,10), samplesAlpha=0.05, density=false)
+    targets = unique([id2target(id) for id in filter(id->!ishistone(id), ids)])
+
+    sendto(workers(), sentData=data, sentT=T)
+    samples = pmap(Progress(numSamples), i->begin
+
+        # get a bootstrap re-sample
+        bootstrapSample = StatsBase.sample(targets, length(targets))
+        idWeights = Dict{ASCIIString,Float64}()
+        for id in bootstrapSample
+            idWeights[id] = get(idWeights, id, 0) + 1
+        end
+
+        # build a bootstrap weighting matrix
+        w = zeros(length(ids))
+        for j in 1:length(ids)
+            w[j] = get(idWeights, ChromNetPaper.id2target(ids[j]), 0)
+        end
+        W = w*w';
+
+        datum = Any[]
+        for d in sentData
+            x,y = ChromNetPaper.network_enrichment_rank(abs(d[1]), sentT, d[2], weights=W)
+            push!(datum, (x,y))
+        end
+        datum
+    end, 1:numSamples)
+    sleep(0.1) # let the progress meter finish printing
+
+    # bin the curves then line them up and average them
+    numBins = 100
+    maxRank = minimum([round(Int, sum(d[2]) / 2) for d in data]) # find the smallest number of considered edges
+    resSamples = Any[]
+    resAvg = Any[]
+    resAucs = Any[]
+    for d in data
+        push!(resSamples, zeros(numBins, numSamples))
+        push!(resAvg, zeros(numBins))
+        push!(resAucs, zeros(numSamples))
+    end
+    for i in 1:numSamples
+        for j in 1:length(data)
+            resSamples[j][:,i] = bin_values_avg(samples[i][j][1][1:maxRank], samples[i][j][2][1:maxRank], numBins)
+            resAvg[j] .+= resSamples[j][:,i]
+            resAucs[j][i] = sum(resSamples[j][:,i])
+        end
+    end
+    for j in 1:length(data)
+        resAvg[j] ./= numSamples
+    end
+
+    # scale the xs depending on if we are plotting by rank or density (of the smallest network given)
+    optionalArgs = Dict()
+    xs = linspace(1,maxRank,numBins)
+    if density
+        xs = linspace(0,1,numBins)
+        optionalArgs[:xticks] = [0, 0.5, 1]
+        optionalArgs[:xticklabels] = ["0%", "50%", "100%"]
+    end
+
+    plot(
+        [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3]) for j in 1:length(data)]...,
+        vcat([[line(
+                xs,
+                resSamples[j][:,i],
+                color=SimplePlot.defaultColors[j],
+                alpha=samplesAlpha,
+                linewidth=1
+            ) for i in 1:min(numSamples,100)] for j in 1:length(data)]...)...;
+        ylim=ylim,
+        xlim=(0,xs[end]),
+        ylabel="fold enrichment over random",
+        xlabel=density ? "edge density in recovered network" : "# of selected edges in network",
+        yticks=1:round(Int, ylim[2]),
+        optionalArgs...
+    ),resAucs
+end
+
 # fill in any blank spots with nearby values
 function fill_nans(vals)
     newVals = copy(vals)
@@ -156,9 +234,12 @@ end
 id2truthDict = Dict()
 "Check if two datasets are connected in BioGRID."
 function id2truth(id1, id2)
+    uniprot2truth(id2uniprot(id1), id2uniprot(id2))
+end
+function uniprot2truth(uid1, uid2)
     global id2truthDict
 
-    if (id2uniprot(id1) == id2uniprot(id2)) && (id2uniprot(id1) != "")
+    if (uid1 == uid2) && (uid1 != "")
         return true
     end
 
@@ -173,7 +254,7 @@ function id2truth(id1, id2)
         close(f)
     end
 
-    get(id2truthDict, (id2uniprot(id1), id2uniprot(id2)), false)
+    get(id2truthDict, (uid1, uid2), false)
 end
 
 metadataDict = open(f->JSON.parse(readall(f)), joinpath(globalDataDir, "metadata.json"))
