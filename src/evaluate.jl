@@ -355,6 +355,27 @@ function bin_values_avg(x, y, nbins)
     ChromNetPaper.fill_nans(sums ./ counts)
 end
 
+function random_cor_matrix(K, netDensity)
+    IC = diagm(abs(randn(K)))
+    for i in 1:K, j in 1:i-1
+        IC[i,j] = rand() < netDensity ? rand()-1.01 : 0.0
+        IC[j,i] = IC[i,j]
+    end
+    mineval = minimum(eig(IC)[1])
+    if mineval < 0
+        IC -= eye(K)*mineval*1.01
+    end
+    C = inv(IC)
+    Base.cov2cor!(C, sqrt(diag(C)))
+end
+
+function conditional_cov(C, controlInds, usedInds, reg=1e-8)
+    controlC = C[controlInds,controlInds]
+    targetC = C[usedInds,usedInds]
+    crossC = C[usedInds,controlInds]
+    A = targetC .- crossC*inv(controlC .+ reg*eye(size(controlC)[1]))*transpose(crossC) .+ reg*eye(size(targetC)[1])
+end
+
 function unique_ppi_pairs(X::AbstractMatrix, ids, T::Array{Bool,2}, M::Array{Bool,2}; numEdges=nothing, scoreThreshold=nothing)
     @assert size(X)[1] == length(ids)
     @assert size(X) == size(M)
