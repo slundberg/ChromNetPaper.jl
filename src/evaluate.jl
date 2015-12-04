@@ -10,6 +10,8 @@ export
     id2treatments,
     id2target,
     ishistone,
+    random_cor_matrix,
+    conditional_cov,
     truth_matrix,
     mask_matrix,
     unique_ppi_pairs,
