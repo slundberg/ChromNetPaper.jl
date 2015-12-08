@@ -1,5 +1,6 @@
 using MLBase
 using JSON
+using SimplePlot
 
 export
     network_enrichment,
@@ -73,7 +74,7 @@ end
 function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,10), samplesAlpha=0.05, density=false)
     targets = unique([id2target(id) for id in filter(id->!ishistone(id), ids)])
 
-    sendto(workers(), sentData=data, sentT=T)
+    sendto(workers(), ChromNetPaper, sentData=data, sentT=T)
     samples = pmap(Progress(numSamples), i->begin
 
         # get a bootstrap re-sample
@@ -296,14 +297,14 @@ function id2treatments(id)
 end
 
 # from: http://stackoverflow.com/questions/27677399/julia-how-to-copy-data-to-another-processor-in-julia
-function sendto(p::Int; args...)
+function sendto(p::Int, m=Main; args...)
     for (nm, val) in args
-        @spawnat(p, eval(Main, Expr(:(=), nm, val)))
+        @spawnat(p, eval(m, Expr(:(=), nm, val)))
     end
 end
-function sendto(ps::Vector{Int}; args...)
+function sendto(ps::Vector{Int}, m=Main; args...)
     for p in ps
-        sendto(p; args...)
+        sendto(p, m; args...)
     end
 end
 
