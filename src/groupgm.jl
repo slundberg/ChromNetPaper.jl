@@ -27,7 +27,7 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
     if groupFilter == nothing
         groupFilter = same_factor_filter
     elseif typeof(groupFilter) <: AbstractFloat
-        groupFilter = x->same_factor_filter(x) && x[1] <= groupFilter
+        groupFilter = same_factor_filter(x) && x[1] <= groupFilter
     end
 
     # create a map from header ids to indexes
