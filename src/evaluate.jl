@@ -130,7 +130,7 @@ function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,
         optionalArgs[:xticklabels] = ["0%", "50%", "100%"]
     end
 
-    plot(
+    axis(
         [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3]) for j in 1:length(data)]...,
         vcat([[line(
                 xs,
