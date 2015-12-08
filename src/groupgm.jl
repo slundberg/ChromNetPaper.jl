@@ -1,4 +1,5 @@
 using ChromNet
+using Memoize
 
 export project_groupgm, edge_groupgm
 
@@ -13,7 +14,7 @@ edge merge function determines how to merge two edge values.
 function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::AbstractArray, groupFilter=nothing, edgeMerge::Function=(x,y)->abs(x) > abs(y) ? x : y)
 
     # by default only allow groups targeting the same factor
-    function same_factor_filter(x)
+    @memoize function same_factor_filter(x)
         parts = split(x[2], ' ')
         referenceUid = ChromNetPaper.id2uniprot(parts[1])
         for i in 2:length(parts)
@@ -25,6 +26,8 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
     end
     if groupFilter == nothing
         groupFilter = same_factor_filter
+    elseif typeof(groupFilter) <: AbstractFloat
+        groupFilter = x->same_factor_filter(x) && x[1] <= groupFilter
     end
 
     # create a map from header ids to indexes

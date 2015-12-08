@@ -17,6 +17,7 @@ export
     unique_ppi_pairs,
     apply_to_celltypes,
     network_enrichment_rank,
+    bootstrap_network_enrichment_rank,
     network_enrichment_density,
     enrichment_rank,
     bin_values_avg
