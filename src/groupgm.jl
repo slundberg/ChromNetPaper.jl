@@ -24,11 +24,13 @@ function project_groupgm(G::AbstractMatrix, header::AbstractArray, groups::Abstr
         end
         true
     end
+    thresholdVal = 0.0
     if groupFilter == nothing
         groupFilter = same_factor_filter
     elseif typeof(groupFilter) <: AbstractFloat
+        thresholdVal = groupFilter
         groupFilter = x->begin
-            same_factor_filter(x) && x[1] <= groupFilter
+            same_factor_filter(x) && x[1] <= thresholdVal
         end
     end
 
