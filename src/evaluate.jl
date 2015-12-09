@@ -132,13 +132,12 @@ function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,
     end
 
     axis(
-        [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3]) for j in 1:length(data)]...,
+        [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3], linewidth=3) for j in 1:length(data)]...,
         vcat([[line(
                 xs,
                 resSamples[j][:,i],
                 color=SimplePlot.defaultColors[j],
-                alpha=samplesAlpha,
-                linewidth=1
+                alpha=samplesAlpha
             ) for i in 1:min(numSamples,100)] for j in 1:length(data)]...)...;
         ylim=ylim,
         xlim=(0,xs[end]),
