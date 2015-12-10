@@ -130,22 +130,18 @@ function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,
         optionalArgs[:xticks] = [0, 0.5, 1]
         optionalArgs[:xticklabels] = ["0%", "50%", "100%"]
     end
-
-    axis(
-        [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3], linewidth=3) for j in 1:length(data)]...,
+    
+    layers = [
+        [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3], linewidth=3) for j in 1:length(data)];
         vcat([[line(
                 xs,
                 resSamples[j][:,i],
                 color=SimplePlot.defaultColors[j],
                 alpha=samplesAlpha
-            ) for i in 1:min(numSamples,100)] for j in 1:length(data)]...)...;
-        ylim=ylim,
-        xlim=(0,xs[end]),
-        ylabel="fold enrichment over random",
-        xlabel=density ? "edge density in recovered network" : "# of selected edges in network",
-        yticks=1:round(Int, ylim[2]),
-        optionalArgs...
-    ),resAucs
+            ) for i in 1:min(numSamples,100)] for j in 1:length(data)]...)
+    ]
+
+    layers,resAucs,maxRank
 end
 
 # fill in any blank spots with nearby values
