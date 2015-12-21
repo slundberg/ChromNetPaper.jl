@@ -71,30 +71,38 @@ function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; weights=nothing
     network_enrichment(X, T, ones(Bool, size(X)...); weights=weights, numEdges=numEdges)
 end
 
-function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, samplesAlpha=0.05, density=false, numBins=100)
-    targets = unique([id2target(id) for id in filter(id->!ishistone(id), ids)])
+function bootstrap_network_enrichment_rank(data, T, ids; noHistones=true, numSamples=10, samplesAlpha=0.05, density=false, numBins=100)
+    targets = unique([id2target(id) for id in filter(id->!noHistones || !ishistone(id), ids)])
 
-    sendto(workers(), ChromNetPaper, sentData=data, sentT=T)
+    ChromNetPaper.sendto(workers(), ChromNetPaper, sentData=data, sentT=T)
     samples = pmap(Progress(numSamples), i->begin
-
-        # get a bootstrap re-sample
-        bootstrapSample = StatsBase.sample(targets, length(targets))
-        idWeights = Dict{ASCIIString,Float64}()
-        for id in bootstrapSample
-            idWeights[id] = get(idWeights, id, 0) + 1
-        end
-
-        # build a bootstrap weighting matrix
-        w = zeros(length(ids))
-        for j in 1:length(ids)
-            w[j] = get(idWeights, ChromNetPaper.id2target(ids[j]), 0)
-        end
-        W = w*w';
-
+        foundValidSample= false
         datum = Any[]
-        for d in sentData
-            x,y = ChromNetPaper.network_enrichment_rank(abs(d[1]), sentT, d[2], weights=W)
-            push!(datum, (x,y))
+        while !foundValidSample
+            foundValidSample = true
+
+            # get a bootstrap re-sample
+            bootstrapSample = StatsBase.sample(targets, length(targets))
+            idWeights = Dict{ASCIIString,Float64}()
+            for id in bootstrapSample
+                idWeights[id] = get(idWeights, id, 0) + 1
+            end
+
+            # build a bootstrap weighting matrix
+            w = zeros(length(ids))
+            for j in 1:length(ids)
+                w[j] = get(idWeights, ChromNetPaper.id2target(ids[j]), 0)
+            end
+            W = w*w';
+
+            datum = Any[]
+            for d in sentData
+                x,y = ChromNetPaper.network_enrichment_rank(abs(d[1]), sentT, d[2], weights=W)
+                if isnan(y[1]) # make sure we have sampled enough truth to get valid numbers
+                    foundValidSample = false
+                end
+                push!(datum, (x,y))
+            end
         end
         datum
     end, 1:numSamples)
