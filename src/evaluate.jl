@@ -97,7 +97,7 @@ function bootstrap_network_enrichment_rank(data, T, ids; noHistones=true, numSam
 
             datum = Any[]
             for d in sentData
-                x,y = ChromNetPaper.network_enrichment_rank(abs(d[1]), sentT, d[2], weights=W)
+                x,y = ChromNetPaper.network_enrichment_rank(d[1], sentT, d[2], weights=W)
                 if isnan(y[1]) # make sure we have sampled enough truth to get valid numbers
                     foundValidSample = false
                 end
