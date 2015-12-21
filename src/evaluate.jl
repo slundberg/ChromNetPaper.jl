@@ -71,7 +71,7 @@ function network_enrichment(X::AbstractMatrix, T::Array{Bool,2}; weights=nothing
     network_enrichment(X, T, ones(Bool, size(X)...); weights=weights, numEdges=numEdges)
 end
 
-function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,10), samplesAlpha=0.05, density=false)
+function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, samplesAlpha=0.05, density=false, numBins=100)
     targets = unique([id2target(id) for id in filter(id->!ishistone(id), ids)])
 
     sendto(workers(), ChromNetPaper, sentData=data, sentT=T)
@@ -101,7 +101,7 @@ function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,
     sleep(0.1) # let the progress meter finish printing
 
     # bin the curves then line them up and average them
-    numBins = 100
+    numBins = numBins
     maxRank = minimum([round(Int, sum(d[2]) / 2) for d in data]) # find the smallest number of considered edges
     resSamples = Any[]
     resAvg = Any[]
@@ -130,7 +130,7 @@ function bootstrap_network_enrichment_rank(data, T, ids; numSamples=10, ylim=(1,
         optionalArgs[:xticks] = [0, 0.5, 1]
         optionalArgs[:xticklabels] = ["0%", "50%", "100%"]
     end
-    
+
     layers = [
         [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3], linewidth=3) for j in 1:length(data)];
         vcat([[line(
@@ -303,13 +303,21 @@ function sendto(ps::Vector{Int}, m=Main; args...)
     end
 end
 
-function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=false)
+function mask_matrix(maskType, ids; excludeCellType=nothing, includeCrossEdges=false, histoneProteinLinks=false)
     P = length(ids)
     M = zeros(Bool, P, P)
     for i in 1:P, j in i:P
 
         # exclude connections involving histones
-        exclude = ishistone(ids[i]) || ishistone(ids[j])
+        exclude = false
+        if histoneProteinLinks
+            # only consider links involving one histone
+            exclude = !ishistone(ids[i]) && !ishistone(ids[j])
+            exclude = exclude || (ishistone(ids[i]) && ishistone(ids[j]))
+        else
+            # exclude connections involving histones
+            exclude = ishistone(ids[i]) || ishistone(ids[j])
+        end
 
         if excludeCellType != nothing
             exclude = exclude || id2celltype(ids[i]) == excludeCellType || id2celltype(ids[j]) == excludeCellType
