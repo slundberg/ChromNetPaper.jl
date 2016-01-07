@@ -110,7 +110,7 @@ function bootstrap_network_enrichment_rank(data, T, ids; noHistones=true, numSam
 
     # bin the curves then line them up and average them
     numBins = numBins
-    maxRank = minimum([round(Int, sum(d[2]) / 2) for d in data]) # find the smallest number of considered edges
+    maxRank = minimum([round(Int, sum(upper(d[2]))) for d in data]) # find the smallest number of considered edges
     resSamples = Any[]
     resAvg = Any[]
     resAucs = Any[]
@@ -140,11 +140,11 @@ function bootstrap_network_enrichment_rank(data, T, ids; noHistones=true, numSam
     end
 
     layers = [
-        [line(xs, resAvg[j], color=SimplePlot.defaultColors[j], data[j][3], linewidth=3) for j in 1:length(data)];
+        [line(xs, resAvg[j], color=SimplePlot.colors[j], data[j][3], linewidth=3) for j in 1:length(data)];
         vcat([[line(
                 xs,
                 resSamples[j][:,i],
-                color=SimplePlot.defaultColors[j],
+                color=SimplePlot.colors[j],
                 alpha=samplesAlpha
             ) for i in 1:min(numSamples,100)] for j in 1:length(data)]...)
     ]
